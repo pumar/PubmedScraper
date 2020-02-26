@@ -171,9 +171,9 @@ class PubMedScraper(object):
        
     
     def saveas(self,
-               file = '',
                filename=''):
         
+        file = filename.split('.')[-1]
         ### Still broken, needs fixing
         if file == 'xml':
             for result in self.results:
@@ -198,4 +198,4 @@ scraper = PubMedScraper(os.environ['http_proxy'])
 
 scraper.search(query = 'warfarin+OR+apixaban+OR+dabigatran+OR+rivaroxaban+OR+edoxaban', max_results = 15000)
 
-scraper.saveas(file = 'csv', filename = 'pfizer_pubmed.csv')
+scraper.saveas(filename = 'pfizer_pubmed.csv')
