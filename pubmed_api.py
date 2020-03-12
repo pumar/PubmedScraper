@@ -6,6 +6,12 @@ import os
 import time
 
 
+QUERY = 'warfarin+OR+apixaban+OR+dabigatran+OR+rivaroxaban+OR+edoxaban'
+MAX_RESULTS = 30000
+PROXY = os.environ['http_proxy']
+FILENAME = 'pfizer_pubmed.csv'
+
+
 class PubMedScraper(object):
     
     def __init__(self,
@@ -17,16 +23,13 @@ class PubMedScraper(object):
         self.db = 'pubmed'
         self.retmode = 'xml'
     
-    def __query_builder(self,
-                      input_keywords):
-        return input_keywords.replace(' ','+')
     
     def search(self,
                query,
                max_results=15000):
         
         if ' ' in query:
-            query = self.__query_builder(query)
+            query = query.replace(' ','+')
         
         search_url = self.base + 'esearch.fcgi?db=' + self.db + '&retmode=' + \
         self.retmode + '&retmax=' + str(max_results) + '&term=' + query + \
@@ -41,7 +44,7 @@ class PubMedScraper(object):
         webenv = soup.find('WebEnv').text
         qkey = soup.find('QueryKey').text
         article_count = int(soup.find('RetMax').text)
-        
+
         if article_count > 10000:
             
             self.results = list()
@@ -86,6 +89,9 @@ class PubMedScraper(object):
         contents = list()
         
         contents.append(article.find('ArticleTitle').text) #Title
+        
+        contents.append(article.find('PMID').text) #PMID
+        
         try:
             contents.append(article.find('ArticleDate').find('Year').text + '-' +\
             article.find('ArticleDate').find('Month').text + '-' +\
@@ -161,6 +167,8 @@ class PubMedScraper(object):
         else:
             contents.append('')
         
+        contents.append( str(len(article.find_all('Reference'))) ) #Reference Number
+        
         contents.append(article.find('Journal').find('Title').text)
         
         contents.append(' '.join([abst.text for abst in article.find_all('AbstractText')]).replace('\n',''))
@@ -177,8 +185,8 @@ class PubMedScraper(object):
         ### Still broken, needs fixing
         if file == 'xml':
             for result in self.results:
-                with open(filename,'w') as f:
-                    f.write("\n".join(str(result,encoding='utf-8') ))
+                with open(filename,'w',encoding='utf-8') as f:
+                    f.write(result.prettify())
         ###
         if file == 'csv':
             article_line = list()
@@ -188,14 +196,14 @@ class PubMedScraper(object):
                     article_line.append(self.__content_extract(article))
                     
             with open(filename, 'w',encoding='utf-8') as f:
-                f.write('"Article Title","Published Date","Main Author","Main Author Affiliation","Secondary Author(s)","Secondary Author(s) Affiliation","Keywords","Journal Name","Abstract"\n')
+                f.write('"Article Title","PMID","Published Date","Main Author","Main Author Affiliation","Secondary Author(s)","Secondary Author(s) Affiliation","Keywords","Number of References","Journal Name","Abstract"\n')
                 for row in article_line:
                     f.write(','.join(row) + '\n')
         
 
 
-scraper = PubMedScraper(os.environ['http_proxy'])
+scraper = PubMedScraper(PROXY)
 
-scraper.search(query = 'warfarin+OR+apixaban+OR+dabigatran+OR+rivaroxaban+OR+edoxaban', max_results = 15000)
+scraper.search(query = QUERY, max_results = MAX_RESULTS)
 
-scraper.saveas(filename = 'pfizer_pubmed.csv')
+scraper.saveas(filename = FILENAME)
