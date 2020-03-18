@@ -39,6 +39,24 @@ def numCitations(url):
             
     return 0
 
+"""
+def numCitations(url):
+    driver.get(url)
+    opts = driver.find_elements_by_class_name('portlet')
+    for opt in opts:
+        if "Cited by" in opt.text:
+                try:
+                    return int((opt.text).split(" ")[2])
+                except:
+                    opt.find_element_by_class_name("seemore").click()
+                    temp_url = driver.current_url
+                    response = requests.get(temp_url,proxies=proxies)
+                    soup = BeautifulSoup(response.text, 'html.parser')
+                    return int( (soup.find("h3",class_="result_count left").text).split(" ")[-1] )
+
+                return 0
+"""
+
 
 for i in df.index:
     df.at[i,"Number of Citations"] = numCitations(df.at[i,"URL"])
